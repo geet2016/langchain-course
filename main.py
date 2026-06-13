@@ -3,9 +3,17 @@ from langchain_core.prompts import PromptTemplate
 from langchain_openai import ChatOpenAI
 from dotenv import dotenv_values, load_dotenv
 from langchain_ollama import ChatOllama
+from dotenv import load_dotenv
+load_dotenv()
+from langchain.agents import create_agent
+from langchain_core.messages import HumanMessage
+from langchain.tools import tool
+from tavily import TavilyClient
+from langchain_tavily import TavilySearch
 
+tavily = TavilyClient();
 
-def main():
+def main1():
     print("Hello from langchain-course!")
     load_dotenv(dotenv_path=r"D:\Agentic AI\langchain-course\.env")
     information = """
@@ -34,5 +42,30 @@ Musk's political activities, statements and views have made him a polarizing fig
     response= chain.invoke(input={"information":information})
     print(response.content)
 
+@tool
+def search(query:str) ->str:
+    """
+    Tool that searches over the internet
+    Args:
+        query: the query to search for
+    Returns:
+        The search result
+    """
+    print(f"Searching for {query}")
+    return tavily.search(query=query)
+
+llm = ChatOpenAI()
+#Either this or TavilySearch(Recommended)
+#tools = [search]
+tools = [TavilySearch()]
+agent = create_agent(model=llm,tools=tools)
+ 
+
+def main():
+     print("Building search agent!")
+     #result = agent.invoke({"messages":HumanMessage(content="What is the weather in Tokyo")})
+     result = agent.invoke({"messages":HumanMessage(content="Search for 3 job postings for an ai engineer in the bay area on Linkedin and list their details")})
+     print(result)
+    
 if __name__ == "__main__":
     main()

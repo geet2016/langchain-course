@@ -10,8 +10,10 @@ from langchain_core.messages import HumanMessage
 from langchain.tools import tool
 from tavily import TavilyClient
 from langchain_tavily import TavilySearch
+from typing import List
+from pydantic import BaseModel, Field
 
-tavily = TavilyClient();
+# BASIC LANGCHAIN INVOKE
 
 def main1():
     print("Hello from langchain-course!")
@@ -42,6 +44,19 @@ Musk's political activities, statements and views have made him a polarizing fig
     response= chain.invoke(input={"information":information})
     print(response.content)
 
+# SEARCH AGENT AND TRACES WITH LANGSMITH
+
+class Source(BaseModel):
+    """Schema for a source used by the agent"""
+    url:str= Field(description="The URL of the source")
+
+class AgentResponse(BaseModel):
+    """"Schema for agent response with answer and sources"""
+    answer:str= Field(description="The agent's answer to the query")
+    sources:List[Source]= Field(default_factory=list, description="List of sources to generate the answer")
+
+tavily = TavilyClient();
+
 @tool
 def search(query:str) ->str:
     """
@@ -58,14 +73,23 @@ llm = ChatOpenAI()
 #Either this or TavilySearch(Recommended)
 #tools = [search]
 tools = [TavilySearch()]
-agent = create_agent(model=llm,tools=tools)
+agent = create_agent(model=llm,tools=tools, response_format=AgentResponse)
  
 
-def main():
+def main3():
      print("Building search agent!")
      #result = agent.invoke({"messages":HumanMessage(content="What is the weather in Tokyo")})
      result = agent.invoke({"messages":HumanMessage(content="Search for 3 job postings for an ai engineer in the bay area on Linkedin and list their details")})
      print(result)
     
+# E-COMMERCE AGENT
+# LAYER 1 -> ReAct Loop
+#Agent Loop -> Query -> Thought -> action(what to do call tool or not) -> Tool -> observation -> back to Thought -> .. -> after Answer
+# LAYER 2 -> Raw function calling
+# LAYER 3 -> Foundation of function calling
+
+def main():
+    print("Building e-commerce agent")
+
 if __name__ == "__main__":
     main()
